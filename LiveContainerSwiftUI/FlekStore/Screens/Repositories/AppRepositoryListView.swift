@@ -14,57 +14,143 @@ struct AppRepositoryListView: View {
     @State private var newRepoURL: String = ""
     private let userDefaultsKey = "savedRepositories"
     
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isLoading = false
+    
     var body: some View {
-           NavigationView {
-               List {
-                   ForEach(apps.indices, id: \.self) { index in
-                       AppRepositoryRow(app: apps[index])
-                           .contentShape(Rectangle())
-                           .onTapGesture { select(at: index) }
-                           .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                               if apps[index].name != "FlekSt0re Lib" {
-                                   Button(role: .destructive) {
-                                       apps.remove(at: index)
-                                       saveApps()
-                                   } label: {
-                                       Label("Delete", systemImage: "trash")
-                                   }
-                               }
-                           }
-                   }
-               }
-               .toolbar {
-                   ToolbarItem(placement: .automatic) {
-                       HStack {
-                           TextField("Source URL", text: $newRepoURL)
-                               .padding()
-                               .textFieldStyle(.automatic)
-                               .autocapitalization(.none)
-                               .disableAutocorrection(true)
-                           
-                           Button(action: addRepository) {
-                               HStack(spacing: 4) {
-                                   Image(systemName: "plus.circle.fill")
-                                   Text("Add")
-                                       .fontWeight(.semibold)
-                               }
-                               .padding(.vertical, 4)
-                               .padding(.horizontal, 10)
-                               .background(Color.blue)
-                               .foregroundColor(.white)
-                               .cornerRadius(30)
-                           }
-                           .disabled(newRepoURL.isEmpty)
-                       }
-                       .frame(maxWidth: .infinity)
-                   }
-               }
-               .onAppear { loadApps() }
-           }
-       }
+        NavigationView {
+            ZStack {
+                VStack {
+                    // MARK: - Input HStack
+                    HStack {
+                        TextField("Source URL", text: $newRepoURL)
+                            .padding(8)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(30)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        
+                        Button(action: addRepository) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Add").fontWeight(.semibold)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(30)
+                        }
+                        .disabled(newRepoURL.isEmpty || isLoading)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top)
+                    
+                    // MARK: - App list
+                    List {
+                        ForEach(apps.indices, id: \.self) { index in
+                            AppRepositoryRow(app: apps[index])
+                                .contentShape(Rectangle())
+                                .onTapGesture { select(at: index) }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    if apps[index].name != "FlekSt0re Lib" {
+                                        Button(role: .destructive) {
+                                            apps.remove(at: index)
+                                            saveApps()
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+                .blur(radius: isLoading ? 3 : 0)
+                
+                // MARK: - Loading overlay
+                if isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                            .scaleEffect(1.5)
+                        Text("Adding repository...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(12)
+                    .shadow(radius: 10)
+                }
+            }
+            .onAppear { loadApps() }
+            .alert("Repository Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
     private func select(at index: Int) {
         for i in apps.indices {
             apps[i].isSelected = (i == index)
+        }
+    }
+    // MARK: - Add repository
+    private func addRepository() {
+        let trimmedURL = newRepoURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty, let url = URL(string: trimmedURL) else { return }
+        
+        isLoading = true
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            defer { DispatchQueue.main.async { isLoading = false } }
+            
+            if let error = error {
+                showErrorOnMain("Failed to fetch repository: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let data = data else {
+                showErrorOnMain("No data returned from repository.")
+                return
+            }
+            
+            do {
+                guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      json["sourceURL"] != nil || json["name"] != nil else {
+                    showErrorOnMain("Invalid repository format. Only AltStore-style repositories are supported.")
+                    return
+                }
+                
+                let name = json["name"] as? String ?? trimmedURL.components(separatedBy: "/").last ?? "New Repo"
+                let sourceURL = json["sourceURL"] as? String ?? trimmedURL
+                let iconUrl = json["iconURL"] as? String ?? (json["META"] as? [String: Any])?["repoIcon"] as? String ?? "https://via.placeholder.com/40"
+                
+                let newRepo = AppRepository(
+                    name: name,
+                    iconUrl: iconUrl,
+                    sourceURL: sourceURL,
+                    isSelected: false
+                )
+                
+                DispatchQueue.main.async {
+                    apps.append(newRepo)
+                    saveApps()
+                    newRepoURL = ""
+                }
+                
+            } catch {
+                showErrorOnMain("Failed to parse repository JSON. Only AltStore-style repositories are supported.")
+            }
+        }.resume()
+    }
+    
+    private func showErrorOnMain(_ message: String) {
+        DispatchQueue.main.async {
+            self.errorMessage = message
+            self.showError = true
         }
     }
     
@@ -98,7 +184,7 @@ struct AppRepositoryListView: View {
                 AppRepository(
                     name: "Quantum Source",
                     iconUrl: "https://quarksources.github.io/assets/ElementQ-Circled.png",
-                    sourceURL: "https://repository.apptesters.org/",
+                    sourceURL: "https://quarksources.github.io/dist/quantumsource.min.json",
                     isSelected: false
                 )
             ]
@@ -111,23 +197,6 @@ struct AppRepositoryListView: View {
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
         }
     }
-    
-    private func addRepository() {
-           let trimmedURL = newRepoURL.trimmingCharacters(in: .whitespacesAndNewlines)
-           guard !trimmedURL.isEmpty else { return }
-           
-           // Create a new repository object
-           let newRepo = AppRepository(
-               name: trimmedURL.components(separatedBy: "/").last ?? "New Repo",
-               iconUrl: "https://via.placeholder.com/40", // placeholder icon
-               sourceURL: trimmedURL,
-               isSelected: false
-           )
-           
-           apps.append(newRepo)
-           saveApps()
-           newRepoURL = "" // clear input
-       }
     
     private func delete(at offsets: IndexSet) {
         // Filter out Flekstore
