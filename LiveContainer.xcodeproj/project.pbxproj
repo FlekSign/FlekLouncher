@@ -153,8 +153,10 @@
 				FlekStore/Models/FlekstoreSharedModel.swift,
 				FlekStore/Models/FSAppModel.swift,
 				FlekStore/Models/FSCategory.swift,
+				FlekStore/Models/RepoResponse.swift,
 				FlekStore/Screens/Apps/FlekstoreAppsListView.swift,
 				FlekStore/Screens/Apps/FlekstoreAppsListViewModel.swift,
+				FlekStore/Screens/Repositories/AppRepositoryListView.swift,
 			);
 			target = 17DCE99C2C7067EC00731D42 /* LiveContainer */;
 		};

@@ -14,28 +14,59 @@ import SwiftUI
 struct FlekstoreAppsListView: View {
     @StateObject private var viewModel = FlekstoreAppsListViewModel()
     @Binding var selectedTab: Int
-    @State private var showRepositorySelect = false
+
+    @State private var showRepositorySheet = false
+    @State private var useCustomRepo = false
+
     var body: some View {
         NavigationView {
-            VStack {
-                // Horizontal categories
+            VStack(spacing: 0) {
+
+                // Repository switch
+                HStack {
+                    Text("Repository")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    Picker("", selection: $useCustomRepo) {
+                        Text("Flekstore").tag(false)
+                        Text("Custom").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .onChange(of: useCustomRepo) { value in
+                    switchRepository(value)
+                }
+
+                // Categories
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 8) {
                         CategoryButton(
                             title: "Updates",
                             isSelected: viewModel.selectedCategoryID == nil
-                        ) { viewModel.selectCategory(nil) }
+                        ) {
+                            viewModel.selectCategory(nil)
+                        }
 
                         CategoryButton(
                             title: "Top",
                             isSelected: viewModel.selectedCategoryID == "downloads"
-                        ) { viewModel.selectCategory("downloads") }
+                        ) {
+                            viewModel.selectCategory("downloads")
+                        }
 
                         ForEach(viewModel.categories) { cat in
                             CategoryButton(
                                 title: cat.name,
                                 isSelected: viewModel.selectedCategoryID == cat.id
-                            ) { viewModel.selectCategory(cat.id) }
+                            ) {
+                                viewModel.selectCategory(cat.id)
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -48,17 +79,19 @@ struct FlekstoreAppsListView: View {
                         ProgressView("Loading apps…")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let error = viewModel.errorMessage {
-                        VStack {
+                        VStack(spacing: 12) {
                             Text(error)
                                 .foregroundColor(.red)
-                                .padding()
-                            Button("Retry") { Task { await viewModel.fetchApps() } }
+
+                            Button("Retry") {
+                                Task { await viewModel.resetAndFetchApps() }
+                            }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         List {
                             ForEach(viewModel.apps) { app in
                                 AppRow(app: app, selectedTab: $selectedTab)
-                                    .buttonStyle(BorderlessButtonStyle())
                                     .onAppear {
                                         if app == viewModel.apps.last {
                                             Task { await viewModel.fetchApps() }
@@ -76,42 +109,56 @@ struct FlekstoreAppsListView: View {
                         }
                         .listStyle(.plain)
                         .refreshable {
-                            Task { await viewModel.resetAndFetchApps() }
+                            await viewModel.resetAndFetchApps()
                         }
                     }
                 }
             }
             .navigationTitle("FlekSt0re")
             .navigationBarTitleDisplayMode(.automatic)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showRepositorySelect = true
-                    } label: {
-                        HStack {
-                            Image("fsLogoRound")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 25, height: 25)
-                            Text("FlekSt0re")
-                        }
-                    }
-                }
-                
-            }
-            .sheet(isPresented: $showRepositorySelect) {
-                //AppRepositoryListView()
-            }
             .searchable(
                 text: $viewModel.searchQuery,
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: "Search by app name"
             )
-            .onChange(of: viewModel.searchQuery) { newValue in
+            .onChange(of: viewModel.searchQuery) { _ in
                 Task { await viewModel.resetAndFetchApps() }
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showRepositorySheet = true
+                    } label: {
+                        Image("fsLogoRound")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                    }
+                }
+            }
+            .sheet(isPresented: $showRepositorySheet) {
+                AppRepositoryListView()
+            }
         }
-        .task { await viewModel.fetchApps() }
+        .task {
+            await viewModel.fetchApps()
+        }
+    }
+
+    // MARK: - Repo Switching
+
+    private func switchRepository(_ useCustom: Bool) {
+        if useCustom {
+            viewModel.repository = .custom(
+                url: "https://appstore.nabzclan.vip/repos/altstore.php"
+            )
+        } else {
+            viewModel.repository = .flekstore
+        }
+
+        Task {
+            await viewModel.resetAndFetchApps()
+        }
     }
 }
 

@@ -14,6 +14,23 @@ class FlekstoreAppsListViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
     @AppStorage("isAdult") private var isAdult: Bool = false
+    
+    //for alt store repos
+    enum RepositorySource: Equatable {
+        case flekstore
+        case custom(url: String)
+    }
+    @Published var repository: RepositorySource = .flekstore
+    
+    private func currentEndpoint() -> URL? {
+        switch repository {
+        case .flekstore:
+            return URL(string: "https://nestapitest.flekstore.com/app/with-link")
+
+        case .custom(let url):
+            return URL(string: url)
+        }
+    }
 
     @Published var searchQuery: String = ""
      
@@ -50,9 +67,6 @@ class FlekstoreAppsListViewModel: ObservableObject {
     
     // Debounce task for search
     private var searchDebounceTask: Task<Void, Never>?
-    
-    // Base endpoint (we construct query items with URLComponents)
-    private let baseEndpoint = "https://nestapitest.flekstore.com/app/with-link"
     
     // Public: call this when user types in the TextField (from the View `.onChange`)
     func debounceSearch(_ newQuery: String) {
@@ -92,43 +106,82 @@ class FlekstoreAppsListViewModel: ObservableObject {
         guard !isLoading, canLoadMore else { return }
         isLoading = true
         errorMessage = nil
-        
-        // Build URL with URLComponents
-        var components = URLComponents(string: baseEndpoint)
-        var queryItems: [URLQueryItem] = []
-        
-        // filter either numeric category id or "updates"
-        let filterValue = selectedCategoryID ?? "updates"
-        queryItems.append(URLQueryItem(name: "filter", value: filterValue))
-        queryItems.append(URLQueryItem(name: "page", value: "\(currentPage)"))
-        
-        let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        queryItems.append(URLQueryItem(name: "search", value: trimmed.isEmpty ? "false" : trimmed))
-        
-        components?.queryItems = queryItems
-        
-        guard let url = components?.url else {
-            errorMessage = "Invalid URL"
+
+        guard let baseURL = currentEndpoint() else {
+            errorMessage = "Invalid repository URL"
             isLoading = false
             return
         }
-        
+
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let decoded = try JSONDecoder().decode([FSAppModel].self, from: data)
-            
-            let filtered = isAdult ? decoded : decoded.filter { $0.app_isAdult != 1 }
-            
-            if filtered.isEmpty {
+            let data: Data
+
+            switch repository {
+
+            // Normal Flekstore API
+            case .flekstore:
+                var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+
+                var queryItems: [URLQueryItem] = []
+                let filterValue = selectedCategoryID ?? "updates"
+
+                queryItems.append(.init(name: "filter", value: filterValue))
+                queryItems.append(.init(name: "page", value: "\(currentPage)"))
+
+                let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+                queryItems.append(.init(name: "search", value: trimmed.isEmpty ? "false" : trimmed))
+
+                components?.queryItems = queryItems
+
+                guard let url = components?.url else {
+                    throw URLError(.badURL)
+                }
+
+                let (responseData, _) = try await URLSession.shared.data(from: url)
+                data = responseData
+
+                let decoded = try JSONDecoder().decode([FSAppModel].self, from: data)
+                let filtered = isAdult ? decoded : decoded.filter { $0.app_isAdult != 1 }
+
+                if filtered.isEmpty {
+                    canLoadMore = false
+                } else {
+                    apps.append(contentsOf: filtered)
+                    currentPage += 1
+                }
+
+            // Custom repository
+            case .custom:
+                let (responseData, _) = try await URLSession.shared.data(from: baseURL)
+                data = responseData
+
+                let mappedApps = try decodeCustomRepo(data)
+
+                apps = mappedApps
                 canLoadMore = false
-            } else {
-                apps.append(contentsOf: filtered)
-                currentPage += 1
             }
+
         } catch {
-            errorMessage = "Failed to load apps: \(error.localizedDescription)"
+            errorMessage = "Failed to load apps"
         }
-        
+
         isLoading = false
+    }
+    
+    //since alt store doesnt provide data if app is adult or not make them all non adult by default
+    private func decodeCustomRepo(_ data: Data) throws -> [FSAppModel] {
+        let response = try JSONDecoder().decode(RepoResponse.self, from: data)
+
+        return response.apps.enumerated().map { index, app in
+            FSAppModel(
+                app_id: index,
+                app_icon: app.iconURL,
+                app_name: app.name,
+                app_version: app.version,
+                app_short_description: app.localizedDescription,
+                app_isAdult: 0,
+                install_url: app.downloadURL
+            )
+        }
     }
 }
