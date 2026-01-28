@@ -18,6 +18,8 @@ struct AppRepositoryListView: View {
     @State private var errorMessage = ""
     @State private var isLoading = false
     
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -82,6 +84,24 @@ struct AppRepositoryListView: View {
                     .background(Color(.systemBackground))
                     .cornerRadius(12)
                     .shadow(radius: 10)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        //dismiss()
+                    } label: {
+                        Text("Edit")
+                            .frame(width: 50)
+                    }
+                    
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
                 }
             }
             .onAppear { loadApps() }

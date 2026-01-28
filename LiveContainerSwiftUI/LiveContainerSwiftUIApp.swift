@@ -92,12 +92,11 @@ struct LiveContainerSwiftUIApp : SwiftUI.App {
     
     var body: some Scene {
         WindowGroup(id: "Main") {
-            AppRepositoryListView()
-//            LCTabView(appDataFolderNames: $appDataFolderNames, tweakFolderNames: $tweakFolderNames)
-//                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-//                .environmentObject(DataManager.shared.model)
-//                .environmentObject(LCAppSortManager.shared)
-//                .environmentObject(flekstoreSharedModel)
+            LCTabView(appDataFolderNames: $appDataFolderNames, tweakFolderNames: $tweakFolderNames)
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+                .environmentObject(DataManager.shared.model)
+                .environmentObject(LCAppSortManager.shared)
+                .environmentObject(flekstoreSharedModel)
         }
         
         if UIApplication.shared.supportsMultipleScenes, #available(iOS 16.1, *) {
