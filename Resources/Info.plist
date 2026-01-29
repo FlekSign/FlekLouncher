@@ -19,6 +19,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>UDID</key>
+	<string>00008101-000E69992E11001E</string>
 	<key>CFBundleExecutable</key>
 	<string>LiveContainer</string>
 	<key>CFBundleIconName</key>

@@ -21,6 +21,7 @@ struct LCSettingsView: View {
     @State var errorInfo = ""
     @State var successShow = false
     @State var successInfo = ""
+    @State private var udid: String = ""
     
     @Binding var appDataFolderNames: [String]
 
@@ -84,6 +85,29 @@ struct LCSettingsView: View {
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("User information")) {
+                    HStack {
+                        Text(udid)
+                            .lineLimit(1)
+                            .scaledToFit()
+                            .minimumScaleFactor(0.3)
+
+                        Spacer()
+
+                        Button(action: {
+                            UIPasteboard.general.string = udid
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }) {
+                            Text("Copy UDID")
+                                .font(.subheadline)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(30)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
                 if sharedModel.multiLCStatus != 2 {
                     Section{
                         if !certificateDataFound {
@@ -489,6 +513,8 @@ struct LCSettingsView: View {
             if !certificateDataFound {
                 Task { await importEmbeddedCertificate() }
             }
+            
+            saveUDIDToUserDefaults()
         }
         .sheet(isPresented: $showShareSheet) {
             if let shareURL = shareURL {
@@ -605,6 +631,31 @@ struct LCSettingsView: View {
         LCUtils.appGroupUserDefault.removeObject(forKey: "symbolOffsetCache")
     }
     
+    func saveUDIDToUserDefaults() {
+        let userDefaultsKey = "deviceUDID"
+
+        if let existingUDID = UserDefaults.standard.string(forKey: userDefaultsKey) {
+            if existingUDID.isEmpty {
+                udid = "UDID in UserDefaults is empty"
+            } else {
+                udid = existingUDID
+                return
+            }
+        } else {
+            // Key not found in UserDefaults, read from Info.plist
+            if let plistUDID = Bundle.main.object(forInfoDictionaryKey: "UDID") as? String {
+                if plistUDID.isEmpty {
+                    udid = "UDID is empty"
+                } else {
+                    UserDefaults.standard.set(plistUDID, forKey: userDefaultsKey)
+                    udid = plistUDID
+                }
+            } else {
+                udid = "UDID key not found"
+            }
+        }
+    }
+    
     func importCertificate() async {
         guard let doImport = await certificateImportAlert.open(), doImport else {
             return
@@ -675,7 +726,6 @@ struct LCSettingsView: View {
             errorShow = true
         }
     }
-
     
     func importCertificateFromSideStore() async {
         if UserDefaults.sideStoreExist() {
