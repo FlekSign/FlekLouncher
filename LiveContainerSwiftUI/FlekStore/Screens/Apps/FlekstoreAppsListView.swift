@@ -121,9 +121,14 @@ struct FlekstoreAppsListView: View {
                 AppRepositoryListView()
             }
         }
-        .onAppear { loadRepos() }
-        .task {
-            await viewModel.fetchApps()
+        .onAppear {
+            Task {
+                if let repo = await loadRepos() {
+                    switchRepository(repo)
+                } else {
+                    await viewModel.fetchApps()
+                }
+            }
         }
         
     }
@@ -142,11 +147,19 @@ struct FlekstoreAppsListView: View {
             await viewModel.resetAndFetchApps()
         }
     }
-    private func loadRepos() {
+    private func loadRepos() async -> AppRepository? {
         if let data = UserDefaults.standard.data(forKey: "savedRepositories"),
            let savedRepos = try? JSONDecoder().decode([AppRepository].self, from: data) {
-            self.repos = savedRepos
+
+            await MainActor.run {
+                self.repos = savedRepos
+            }
+
+            // Return only the repo that is selected
+            return savedRepos.first(where: { $0.isSelected })
         }
+
+        return nil
     }
     
 }
