@@ -31,7 +31,24 @@ class FlekstoreAppsListViewModel: ObservableObject {
             return URL(string: url)
         }
     }
+    
+    //computed property for search for custom repos
+    var visibleApps: [FSAppModel] {
+        switch repository {
+        case .flekstore:
+            return apps
 
+        case .custom:
+            let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !query.isEmpty else { return apps }
+
+            return apps.filter {
+                $0.app_name.localizedCaseInsensitiveContains(query)
+            }
+        }
+    }
+    
     @Published var searchQuery: String = ""
      
     @Published var allCategories: [FSCategory] = [

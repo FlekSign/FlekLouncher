@@ -82,7 +82,7 @@ struct FlekstoreAppsListView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         List {
-                            ForEach(viewModel.apps) { app in
+                            ForEach(viewModel.visibleApps) { app in
                                 AppRow(app: app, selectedTab: $selectedTab)
                                     .onAppear {
                                         if app == viewModel.apps.last {
@@ -112,7 +112,9 @@ struct FlekstoreAppsListView: View {
                 prompt: "Search by app name"
             )
             .onChange(of: viewModel.searchQuery) { _ in
-                Task { await viewModel.resetAndFetchApps() }
+                if viewModel.repository == .flekstore {
+                    Task { await viewModel.resetAndFetchApps() }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -137,7 +139,8 @@ struct FlekstoreAppsListView: View {
     // MARK: - Repos
 
     private func switchRepository(_ repo: AppRepository) {
-        //hard coded sourceURL for Flekstore instead of real one so it doesnt show the api endpoint in the UI for users
+        viewModel.searchQuery = ""
+
         if repo.sourceURL == "Default app catalog" {
             viewModel.repository = .flekstore
         } else {
@@ -148,6 +151,7 @@ struct FlekstoreAppsListView: View {
             await viewModel.resetAndFetchApps()
         }
     }
+    
     private func loadRepos() async -> AppRepository? {
         if let data = UserDefaults.standard.data(forKey: "savedRepositories"),
            let savedRepos = try? JSONDecoder().decode([AppRepository].self, from: data) {
