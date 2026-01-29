@@ -30,6 +30,7 @@ struct FlekstoreAppsListView: View {
                         switchRepository(repo)
                     }
                 )
+                .padding(.vertical , 2)
                 .padding(.horizontal)
                
                 if (viewModel.repository == .flekstore)

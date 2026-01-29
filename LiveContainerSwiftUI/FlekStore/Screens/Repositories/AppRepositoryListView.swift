@@ -18,6 +18,7 @@ struct AppRepositoryListView: View {
     @State private var errorMessage = ""
     @State private var isLoading = false
     
+    @State private var editMode: EditMode = .inactive
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -55,16 +56,25 @@ struct AppRepositoryListView: View {
                             AppRepositoryRow(repo: repos[index])
                                 .contentShape(Rectangle())
                                 .onTapGesture { select(at: index) }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    if repos[index].name != "FlekSt0re Lib" {
-                                        Button(role: .destructive) {
-                                            repos.remove(at: index)
-                                            saveRepos()
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                    }
-                                }
+                        }
+                        .onDelete { indexSet in
+                            let deletable = indexSet.filter { repos[$0].name != "FlekSt0re Lib" }
+                            repos.remove(atOffsets: IndexSet(deletable))
+                            saveRepos()
+                        }
+                        .onMove { indices, newOffset in
+                            // Prevent moving FlekSt0re
+                            let movingIndices = indices.filter { repos[$0].name != "FlekSt0re Lib" }
+                            guard !movingIndices.isEmpty else { return }
+                            
+                            // Compute safe newOffset (cannot move past FlekSt0re)
+                            var safeOffset = newOffset
+                            if safeOffset <= repos.firstIndex(where: { $0.name == "FlekSt0re Lib" }) ?? -1 {
+                                safeOffset += movingIndices.count
+                            }
+                            
+                            repos.move(fromOffsets: IndexSet(movingIndices), toOffset: safeOffset)
+                            saveRepos()
                         }
                     }
                 }
@@ -88,13 +98,7 @@ struct AppRepositoryListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        //dismiss()
-                    } label: {
-                        Text("Edit")
-                            .frame(width: 50)
-                    }
-                    
+                    EditButton()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -105,6 +109,7 @@ struct AppRepositoryListView: View {
                 }
             }
             .onAppear { loadRepos() }
+            .environment(\.editMode, $editMode)
             .alert("Repository Error", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {

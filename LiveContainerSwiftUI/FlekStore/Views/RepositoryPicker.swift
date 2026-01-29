@@ -131,14 +131,15 @@ private extension RepositoryPicker {
             HStack {
                 Text("Manage Sources")
                     .foregroundColor(.primary)
+                    .font(.footnote.bold())
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .foregroundColor(.secondary)
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 6)
+            .padding(.vertical, 5)
+            .padding(.horizontal)
         }
         .buttonStyle(.plain)
     }
