@@ -149,6 +149,7 @@
 		074A45B92E8B3AE800263918 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FlekStore/Helpers/apiDateFormatter.swift,
 				FlekStore/Models/AppRepository.swift,
 				FlekStore/Models/DeviceResponse.swift,
 				FlekStore/Models/FlekstoreSharedModel.swift,

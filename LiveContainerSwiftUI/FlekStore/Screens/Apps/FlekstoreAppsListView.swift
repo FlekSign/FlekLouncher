@@ -18,6 +18,7 @@ struct FlekstoreAppsListView: View {
 
     @State private var showRepositorySheet = false
     @State private var repos: [AppRepository] = []
+    @State private var udid = Bundle.main.object(forInfoDictionaryKey: "UDID") as? String
 
     var body: some View {
         NavigationView {
@@ -83,7 +84,12 @@ struct FlekstoreAppsListView: View {
                     } else {
                         List {
                             ForEach(viewModel.visibleApps) { app in
-                                AppRow(app: app, selectedTab: $selectedTab)
+                                AppRow(
+                                    app: app,
+                                    selectedTab: $selectedTab,
+                                    isCustomRepository: (viewModel.repository != .flekstore),
+                                    hasSubscription: viewModel.hasSubscription
+                                )
                                     .onAppear {
                                         if app == viewModel.apps.last {
                                             Task { await viewModel.fetchApps() }
@@ -131,6 +137,8 @@ struct FlekstoreAppsListView: View {
         }
         .onAppear {
             Task {
+                await viewModel.checkSubscriptionIfNeeded(for: udid ?? "")
+                
                 if let repo = await loadRepos() {
                     switchRepository(repo)
                 } else {
@@ -213,12 +221,15 @@ struct AppRow: View {
     let app: FSAppModel
     @Binding var selectedTab: Int
     @EnvironmentObject private var flekstoreSharedModel: FlekstoreSharedModel
+    
+    // Add these
+    let isCustomRepository: Bool
+    let hasSubscription: Bool
+    
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             KFImage(URL(string: app.app_icon))
-                .placeholder {
-                    Color.gray.opacity(0.2)
-                }
+                .placeholder { Color.gray.opacity(0.2) }
                 .resizable()
                 .scaledToFit()
                 .frame(width: 60, height: 60)
@@ -243,8 +254,14 @@ struct AppRow: View {
             VStack {
                 Spacer()
                 Button(action: {
-                    selectedTab = 0
-                    flekstoreSharedModel.appInstallURL = app.install_url
+                    // Check your condition here
+                    if isCustomRepository && !hasSubscription {
+                        // Optional: show some alert or feedback
+                        print("Subscription required")
+                    } else {
+                        selectedTab = 0
+                        flekstoreSharedModel.appInstallURL = app.install_url
+                    }
                 }) {
                     Text("GET")
                         .font(.subheadline.bold())
@@ -254,7 +271,6 @@ struct AppRow: View {
                         .foregroundColor(.white)
                         .cornerRadius(14)
                 }
-                
                 Spacer()
             }
         }

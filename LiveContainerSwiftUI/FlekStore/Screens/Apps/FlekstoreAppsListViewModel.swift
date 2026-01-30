@@ -15,6 +15,16 @@ class FlekstoreAppsListViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @AppStorage("isAdult") private var isAdult: Bool = false
     
+    @State private var subscriptionEndDate: String?
+    @State var hasSubscription: Bool = false
+
+    //for checking subscription status
+    private enum SubscriptionKeys {
+        static let endDate = "subscriptionEndDate"
+        static let lastCheckDate = "lastSubscriptionCheckDate"
+        static let hasActive = "hasActiveSubscription"
+    }
+    
     //for alt store repos
     enum RepositorySource: Equatable {
         case flekstore
@@ -183,6 +193,99 @@ class FlekstoreAppsListViewModel: ObservableObject {
         }
 
         isLoading = false
+    }
+    
+    
+    func checkSubscriptionIfNeeded(for udid: String) async {
+        let defaults = UserDefaults.standard
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        if let lastCheckString = defaults.string(forKey: SubscriptionKeys.lastCheckDate),
+           let lastCheckDate = displayDateFormatter.date(from: lastCheckString) {
+
+            let lastCheckDay = calendar.startOfDay(for: lastCheckDate)
+
+            // If already checked today → use cached value
+            if lastCheckDay == today {
+                validateCachedSubscription()
+                return
+            }
+
+            // Time rollback protection
+            if today < lastCheckDay {
+                clearSubscription()
+                return
+            }
+        }
+
+        // Otherwise → fetch from API
+        await checkSubscriptionFromAPI(for: udid)
+    }
+    
+    private func checkSubscriptionFromAPI(for udid: String) async {
+        let urlString = "https://nestapi.flekstore.com/device/\(udid)"
+        guard let url = URL(string: urlString) else { return }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let decoded = try JSONDecoder().decode(DeviceStatusResponse.self, from: data)
+
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+
+            await MainActor.run {
+                guard
+                    let service = decoded.service?.first,
+                    let endDate = apiDateFormatter.date(from: service.end_date)
+                else {
+                    clearSubscription()
+                    return
+                }
+
+                let endDay = calendar.startOfDay(for: endDate)
+                let isActive = endDay >= today
+
+                let formattedEnd = displayDateFormatter.string(from: endDate)
+                let formattedToday = displayDateFormatter.string(from: today)
+
+                UserDefaults.standard.set(formattedEnd, forKey: SubscriptionKeys.endDate)
+                UserDefaults.standard.set(formattedToday, forKey: SubscriptionKeys.lastCheckDate)
+                UserDefaults.standard.set(isActive, forKey: SubscriptionKeys.hasActive)
+
+                subscriptionEndDate = formattedEnd
+                hasSubscription = isActive
+            }
+
+        } catch {
+            print("Subscription API check failed:", error)
+        }
+    }
+    
+    private func validateCachedSubscription() {
+        let defaults = UserDefaults.standard
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        guard
+            let endString = defaults.string(forKey: SubscriptionKeys.endDate),
+            let endDate = displayDateFormatter.date(from: endString)
+        else {
+            hasSubscription = false
+            return
+        }
+
+        let endDay = calendar.startOfDay(for: endDate)
+        hasSubscription = endDay >= today
+    }
+    
+    private func clearSubscription() {
+        subscriptionEndDate = nil
+        hasSubscription = false
+
+        UserDefaults.standard.removeObject(forKey: "subscriptionEndDate")
+        UserDefaults.standard.removeObject(forKey: "lastSubscriptionCheckDate")
+        UserDefaults.standard.removeObject(forKey: "hasActiveSubscription")
     }
     
     //since alt store doesnt provide data if app is adult or not make them all non adult by default
