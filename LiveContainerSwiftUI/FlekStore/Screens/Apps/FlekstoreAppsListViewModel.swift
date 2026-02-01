@@ -15,9 +15,11 @@ class FlekstoreAppsListViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @AppStorage("isAdult") private var isAdult: Bool = false
     
-    @State private var subscriptionEndDate: String?
-    @State var hasSubscription: Bool = false
+    @Published var hasSubscription: Bool = false
+    @Published var subscriptionEndDate: String?
 
+    @Published var deviceDateErrorMessage: String? = nil
+    
     //for checking subscription status
     private enum SubscriptionKeys {
         static let endDate = "subscriptionEndDate"
@@ -206,23 +208,48 @@ class FlekstoreAppsListViewModel: ObservableObject {
 
             let lastCheckDay = calendar.startOfDay(for: lastCheckDate)
 
-            // If already checked today → use cached value
-            if lastCheckDay == today {
-                validateCachedSubscription()
-                return
-            }
-
             // Time rollback protection
             if today < lastCheckDay {
                 clearSubscription()
+                deviceDateErrorMessage = "Your device date seems incorrect. Please fix it to continue using subscription."
                 return
+            }
+
+            if lastCheckDay == today {
+                let hasActive = defaults.bool(forKey: SubscriptionKeys.hasActive)
+
+                // Only trust cache if subscription is active
+                if hasActive {
+                    validateCachedSubscription()
+                    return
+                }
+                // If inactive today, fall through and recheck API
             }
         }
 
-        // Otherwise → fetch from API
+        // Fetch from API
         await checkSubscriptionFromAPI(for: udid)
     }
     
+    @MainActor
+    func checkDeviceDate() -> Bool {
+        let defaults = UserDefaults.standard
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        if let lastCheckString = defaults.string(forKey: SubscriptionKeys.lastCheckDate),
+           let lastCheckDate = displayDateFormatter.date(from: lastCheckString) {
+            let lastCheckDay = calendar.startOfDay(for: lastCheckDate)
+
+            if today < lastCheckDay {
+                clearSubscription()
+                deviceDateErrorMessage = "Your device date seems incorrect. Please fix it to continue using subscription."
+                return false
+            }
+        }
+        // Date looks fine
+        return true
+    }
     private func checkSubscriptionFromAPI(for udid: String) async {
         let urlString = "https://nestapi.flekstore.com/device/\(udid)"
         guard let url = URL(string: urlString) else { return }
@@ -255,6 +282,7 @@ class FlekstoreAppsListViewModel: ObservableObject {
 
                 subscriptionEndDate = formattedEnd
                 hasSubscription = isActive
+                print("SUB CHECK via api:", udid, isActive)
             }
 
         } catch {
@@ -272,11 +300,13 @@ class FlekstoreAppsListViewModel: ObservableObject {
             let endDate = displayDateFormatter.date(from: endString)
         else {
             hasSubscription = false
+            print("No cached sub")
             return
         }
 
         let endDay = calendar.startOfDay(for: endDate)
         hasSubscription = endDay >= today
+        print("Has cached sub")
     }
     
     private func clearSubscription() {

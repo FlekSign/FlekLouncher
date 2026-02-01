@@ -150,6 +150,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FlekStore/Helpers/apiDateFormatter.swift,
+				"FlekStore/Helpers/String+ext.swift",
 				FlekStore/Models/AppRepository.swift,
 				FlekStore/Models/DeviceResponse.swift,
 				FlekStore/Models/FlekstoreSharedModel.swift,

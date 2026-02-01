@@ -211,7 +211,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             .coordinateSpace(name: "scroll")
             .onAppear {
                 if !didAppear { onAppear() }
-                print("Current url is \(flekstoreSharedModel.appInstallURL)")
+                //print("Current url is \(flekstoreSharedModel.appInstallURL)")
                 if flekstoreSharedModel.appInstallURL != "" {
                     Task {
                         await installFromUrl(urlStr: flekstoreSharedModel.appInstallURL)

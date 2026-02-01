@@ -32,7 +32,8 @@ struct PremiumRequiredView: View {
             
             Image("premiumSuggestion")
                 .resizable()
-                .frame(width: .infinity, height: 250)
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: 250)
                 .cornerRadius(20)
                 .shadow(radius: 10)
                 .padding()

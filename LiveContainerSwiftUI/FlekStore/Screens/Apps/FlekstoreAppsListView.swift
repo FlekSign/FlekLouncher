@@ -15,16 +15,16 @@ import Kingfisher
 struct FlekstoreAppsListView: View {
     @StateObject private var viewModel = FlekstoreAppsListViewModel()
     @Binding var selectedTab: Int
-
+    
     @State private var showRepositorySheet = false
     @State private var showPremiumRequiredSheet = false
     @State private var repos: [AppRepository] = []
     @State private var udid = Bundle.main.object(forInfoDictionaryKey: "UDID") as? String
-
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-
+                
                 RepositoryPicker(
                     repositories: $repos,
                     showSheet: $showRepositorySheet,
@@ -34,7 +34,7 @@ struct FlekstoreAppsListView: View {
                 )
                 .padding(.vertical , 2)
                 .padding(.horizontal)
-               
+                
                 if (viewModel.repository == .flekstore)
                 {
                     // Categories
@@ -76,7 +76,7 @@ struct FlekstoreAppsListView: View {
                         VStack(spacing: 12) {
                             Text(error)
                                 .foregroundColor(.red)
-
+                            
                             Button("Retry") {
                                 Task { await viewModel.resetAndFetchApps() }
                             }
@@ -95,12 +95,12 @@ struct FlekstoreAppsListView: View {
                                     }
                                 )
                                 .onAppear {
-                                        if app == viewModel.apps.last {
-                                            Task { await viewModel.fetchApps() }
-                                        }
+                                    if app == viewModel.apps.last {
+                                        Task { await viewModel.fetchApps() }
                                     }
+                                }
                             }
-
+                            
                             if viewModel.isLoading {
                                 HStack {
                                     Spacer()
@@ -142,9 +142,16 @@ struct FlekstoreAppsListView: View {
                 PremiumRequiredView()
             }
         }
+        .onChange(of: viewModel.hasSubscription) {
+            print("HAS SUB:", $0)
+        }
         .onAppear {
             Task {
-                await viewModel.checkSubscriptionIfNeeded(for: udid ?? "")
+                guard let udid, !udid.isEmpty else {
+                    return
+                }
+                
+                await viewModel.checkSubscriptionIfNeeded(for: udid)
                 
                 if let repo = await loadRepos() {
                     switchRepository(repo)
@@ -153,21 +160,30 @@ struct FlekstoreAppsListView: View {
                 }
             }
         }
+        .alert(item: $viewModel.deviceDateErrorMessage) { message in
+            Alert(
+                title: Text("Device Date Error"),
+                message: Text(message),
+                dismissButton: .default(Text("OK")) {
+                    viewModel.deviceDateErrorMessage = nil
+                }
+            )
+        }
         
     }
-
+    
     // MARK: - Repos
-
+    
     private func switchRepository(_ repo: AppRepository) {
-        //make search field empty so search is not automatically applied when user switches repos 
+        //make search field empty so search is not automatically applied when user switches repos
         viewModel.searchQuery = ""
-
+        
         if repo.sourceURL == "Default app catalog" {
             viewModel.repository = .flekstore
         } else {
             viewModel.repository = .custom(url: repo.sourceURL)
         }
-
+        
         Task {
             await viewModel.resetAndFetchApps()
         }
@@ -176,15 +192,15 @@ struct FlekstoreAppsListView: View {
     private func loadRepos() async -> AppRepository? {
         if let data = UserDefaults.standard.data(forKey: "savedRepositories"),
            let savedRepos = try? JSONDecoder().decode([AppRepository].self, from: data) {
-
+            
             await MainActor.run {
                 self.repos = savedRepos
             }
-
+            
             // Return only the repo that is selected
             return savedRepos.first(where: { $0.isSelected })
         }
-
+        
         return nil
     }
     
@@ -231,7 +247,7 @@ struct AppRow: View {
     
     let isCustomRepository: Bool
     let hasSubscription: Bool
-
+    
     let onPremiumRequired: () -> Void
     
     var body: some View {
