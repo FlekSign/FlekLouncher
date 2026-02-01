@@ -17,6 +17,7 @@ struct FlekstoreAppsListView: View {
     @Binding var selectedTab: Int
 
     @State private var showRepositorySheet = false
+    @State private var showPremiumRequiredSheet = false
     @State private var repos: [AppRepository] = []
     @State private var udid = Bundle.main.object(forInfoDictionaryKey: "UDID") as? String
 
@@ -88,9 +89,12 @@ struct FlekstoreAppsListView: View {
                                     app: app,
                                     selectedTab: $selectedTab,
                                     isCustomRepository: (viewModel.repository != .flekstore),
-                                    hasSubscription: viewModel.hasSubscription
+                                    hasSubscription: viewModel.hasSubscription,
+                                    onPremiumRequired: {
+                                        showPremiumRequiredSheet = true
+                                    }
                                 )
-                                    .onAppear {
+                                .onAppear {
                                         if app == viewModel.apps.last {
                                             Task { await viewModel.fetchApps() }
                                         }
@@ -133,6 +137,9 @@ struct FlekstoreAppsListView: View {
                         switchRepository(repo)
                     }
                 )
+            }
+            .sheet(isPresented: $showPremiumRequiredSheet) {
+                PremiumRequiredView()
             }
         }
         .onAppear {
@@ -222,9 +229,10 @@ struct AppRow: View {
     @Binding var selectedTab: Int
     @EnvironmentObject private var flekstoreSharedModel: FlekstoreSharedModel
     
-    // Add these
     let isCustomRepository: Bool
     let hasSubscription: Bool
+
+    let onPremiumRequired: () -> Void
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -256,8 +264,8 @@ struct AppRow: View {
                 Button(action: {
                     // Check your condition here
                     if isCustomRepository && !hasSubscription {
-                        // Optional: show some alert or feedback
                         print("Subscription required")
+                        onPremiumRequired()
                     } else {
                         selectedTab = 0
                         flekstoreSharedModel.appInstallURL = app.install_url
