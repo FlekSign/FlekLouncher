@@ -40,9 +40,14 @@ struct LCTabView: View {
 //                    .tag(2)
 //            }
 
-            LCSettingsView(appDataFolderNames: $appDataFolderNames)
-                .tabItem { Label("lc.tabView.settings".loc, systemImage: "gearshape.fill") }
-                .tag(3)
+            LCSettingsView(
+                appDataFolderNames: $appDataFolderNames,
+                tweakFolderNames: $tweakFolderNames
+            )
+            .tabItem {
+                Label("lc.tabView.settings".loc, systemImage: "gearshape.fill")
+            }
+            .tag(3)
         }
         .alert("lc.common.error".loc, isPresented: $errorShow) {
             Button("lc.common.ok".loc) {}

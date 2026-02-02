@@ -27,6 +27,8 @@ struct LCSettingsView: View {
     @State private var hasSubscription: Bool = false
     
     @Binding var appDataFolderNames: [String]
+    @Binding var tweakFolderNames: [String]
+    
     
     @StateObject private var installLC2Alert = AlertHelper<Int>()
     @State private var certificateDataFound = false
@@ -68,11 +70,15 @@ struct LCSettingsView: View {
     
     let storeName = LCUtils.getStoreName()
     
-    init(appDataFolderNames: Binding<[String]>) {
+    init(
+        appDataFolderNames: Binding<[String]>,
+        tweakFolderNames: Binding<[String]>
+    ) {
         _certificateDataFound = State(initialValue: LCUtils.certificatePassword() != nil)
         _store = State(initialValue: LCUtils.store())
-        
+
         _appDataFolderNames = appDataFolderNames
+        _tweakFolderNames = tweakFolderNames
     }
     
     let fsPassword: String = {
@@ -277,6 +283,16 @@ struct LCSettingsView: View {
                 } footer: {
                     Text("Enabling this option will grant access to applications with strict age restrictions and the \"Adult\" category.")
                 }
+                
+                Section{
+                    NavigationLink {
+                        LCTweaksView(tweakFolders: $tweakFolderNames)
+                    } label: {
+                        Label("Tweaks", systemImage: "wrench.and.screwdriver")
+                    }
+                } header: {
+                    Text("Tweaks")
+                } 
                 
                 Section{
                     Toggle(isOn: $dynamicColors) {
