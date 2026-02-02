@@ -34,7 +34,6 @@ struct PremiumRequiredView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: 250)
-                .cornerRadius(20)
                 .shadow(radius: 10)
                 .padding()
             
