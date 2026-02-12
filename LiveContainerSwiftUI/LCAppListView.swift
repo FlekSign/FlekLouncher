@@ -58,7 +58,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     @State var webViewURL : URL = URL(string: "about:blank")!
     @StateObject private var webViewUrlInput = InputHelper()
     
-    @ObservedObject var downloadHelper = DownloadHelper()
+    @StateObject private var downloadHelper = DownloadHelper()
     @StateObject private var installUrlInput = InputHelper()
     
     @State private var jitLog = ""

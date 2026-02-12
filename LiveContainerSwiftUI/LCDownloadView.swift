@@ -137,6 +137,9 @@ public struct DownloadAlertModifier: ViewModifier {
             }
             
         }
+        .onAppear {
+            show = helper.isDownloading
+        }
         .onChange(of: helper.isDownloading) { newVal in
             withAnimation(.easeInOut(duration: 0.1)) {
                 show = newVal
