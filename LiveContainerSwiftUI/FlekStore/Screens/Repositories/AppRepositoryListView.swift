@@ -122,6 +122,7 @@ struct AppRepositoryListView: View {
         for i in repos.indices {
             repos[i].isSelected = (i == index)
         }
+        saveRepos()
         
         // Notify parent
         if let selectedRepo = repos.first(where: { $0.isSelected }) {

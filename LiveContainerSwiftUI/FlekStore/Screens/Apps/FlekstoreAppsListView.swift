@@ -21,19 +21,23 @@ struct FlekstoreAppsListView: View {
     @State private var repos: [AppRepository] = []
     @State private var udid = Bundle.main.object(forInfoDictionaryKey: "UDID") as? String
     
+    private var selectedRepo: AppRepository? {
+        repos.first(where: { $0.isSelected })
+    }
+
+    private var selectedSourceURLBinding: Binding<String> {
+        Binding(
+            get: { selectedRepo?.sourceURL ?? "" },
+            set: { newValue in
+                guard let repo = repos.first(where: { $0.sourceURL == newValue }) else { return }
+                selectRepository(repo)
+            }
+        )
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                
-                RepositoryPicker(
-                    repositories: $repos,
-                    showSheet: $showRepositorySheet,
-                    onSelect: { repo in
-                        switchRepository(repo)
-                    }
-                )
-                .padding(.vertical , 2)
-                .padding(.horizontal)
                 
                 if (viewModel.repository == .flekstore)
                 {
@@ -128,14 +132,49 @@ struct FlekstoreAppsListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if viewModel.repository != .flekstore && !viewModel.hasSubscription {
-                        Text("Premium required")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundColor(.orange)
-                            .clipShape(Capsule())
+                    Menu {
+                        Picker("Repository", selection: selectedSourceURLBinding) {
+                            ForEach(repos) { repo in
+                                HStack(spacing: 8) {
+                                    if let url = URL(string: repo.iconUrl) {
+                                        KFImage(url)
+                                            .placeholder { Color.gray.opacity(0.2) }
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 16, height: 16)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    } else {
+                                        Image(systemName: "square.stack")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Text(repo.name)
+                                }
+                                .tag(repo.sourceURL)
+                            }
+                        }
+                        Divider()
+                        Button("Manage Sources") {
+                            showRepositorySheet = true
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if let iconUrl = selectedRepo?.iconUrl,
+                               let url = URL(string: iconUrl) {
+                                KFImage(url)
+                                    .placeholder { Color.gray.opacity(0.2) }
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            } else {
+                                Image(systemName: "square.stack")
+                                    .foregroundColor(.secondary)
+                            }
+                            Text(selectedRepo?.name ?? "Sources")
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 12))
+                        }
                     }
                 }
             }
@@ -180,6 +219,20 @@ struct FlekstoreAppsListView: View {
     
     // MARK: - Repos
     
+    private func selectRepository(_ repo: AppRepository) {
+        let updated = repos.map {
+            AppRepository(
+                name: $0.name,
+                iconUrl: $0.iconUrl,
+                sourceURL: $0.sourceURL,
+                isSelected: $0.sourceURL == repo.sourceURL
+            )
+        }
+        repos = updated
+        saveRepos(updated)
+        switchRepository(repo)
+    }
+
     private func switchRepository(_ repo: AppRepository) {
         //make search field empty so search is not automatically applied when user switches repos
         viewModel.searchQuery = ""
@@ -208,6 +261,12 @@ struct FlekstoreAppsListView: View {
         }
         
         return nil
+    }
+
+    private func saveRepos(_ repos: [AppRepository]) {
+        if let data = try? JSONEncoder().encode(repos) {
+            UserDefaults.standard.set(data, forKey: "savedRepositories")
+        }
     }
     
 }
