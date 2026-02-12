@@ -10,7 +10,6 @@ import Foundation
 
 struct DeviceStatusResponse: Codable {
     let status: Bool
-    let endDate: Date
+    let endDate: String
     let udid: String
 }
-

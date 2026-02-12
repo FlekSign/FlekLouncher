@@ -66,6 +66,19 @@ struct LCSettingsView: View {
     @AppStorage("LCKeepSelectedWhenQuit") var keepSelectedWhenQuit = false
     @AppStorage("LCWaitForDebugger") var waitForDebugger = false
     
+    ///Flekstore user defaults
+    @AppStorage("LCEncryptedUDID", store: LCUtils.appGroupUserDefault)
+    private var encryptedUDID: String = ""
+
+    @AppStorage("LCSubscriptionEndDate", store: LCUtils.appGroupUserDefault)
+    private var subscriptionEndDateStored: String = ""
+
+    @AppStorage("LCSubscriptionStatus", store: LCUtils.appGroupUserDefault)
+    private var subscriptionStatusStored: Bool = false
+    
+    @AppStorage("LCSubscriptionInitialized", store: LCUtils.appGroupUserDefault)
+    private var subscriptionInitialized: Bool = false
+    
     @EnvironmentObject private var sharedModel : SharedModel
     
     let storeName = LCUtils.getStoreName()
@@ -151,7 +164,7 @@ struct LCSettingsView: View {
                         Button {
                             Task {
                                 if !udid.isEmpty {
-                                    //await checkSubscription(for: udid)
+                                    await checkSubscription()
                                 }
                             }
                         } label: {
@@ -491,6 +504,21 @@ struct LCSettingsView: View {
             .navigationBarTitle("lc.tabView.settings".loc)
             .onAppear {
                 sharedModel.updateMultiLCStatus()
+                
+                loadEncryptedUDIDFromPlist()
+                
+                // Load cached values
+                udid = deviceUDID
+                hasSubscription = subscriptionStatusStored
+                subscriptionEndDate = subscriptionEndDateStored.isEmpty ? nil : subscriptionEndDateStored
+                
+                // Only call API once on initial start
+                if !subscriptionInitialized {
+                    Task {
+                        await checkSubscription()
+                        subscriptionInitialized = true
+                    }
+                }
             }
             .onForeground {
                 sharedModel.updateMultiLCStatus()
@@ -883,6 +911,43 @@ struct LCSettingsView: View {
                 onSideStoreCertificateCallback(certificateData: certData, password: password)
                 
             }
+        }
+    }
+    
+    private func loadEncryptedUDIDFromPlist() {
+        if let dict = Bundle.main.infoDictionary,
+           let value = dict["encryptedUdid"] as? String,
+           !value.isEmpty {
+            
+            encryptedUDID = value
+        }
+    }
+    
+    private func checkSubscription() async {
+        guard !encryptedUDID.isEmpty else { return }
+        
+        guard let url = URL(
+            string: "https://nestapitest.flekstore.com/device-service/get-status/\(encryptedUDID)"
+        ) else { return }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            
+            let response = try JSONDecoder().decode(DeviceStatusResponse.self, from: data)
+            
+            // Save to AppStorage
+            deviceUDID = response.udid
+            udid = response.udid
+            
+            subscriptionStatusStored = response.status
+            subscriptionEndDateStored = response.endDate
+            
+            hasSubscription = response.status
+            subscriptionEndDate = response.endDate
+            
+        } catch {
+            errorInfo = error.localizedDescription
+            errorShow = true
         }
     }
 }
