@@ -67,16 +67,16 @@ struct LCSettingsView: View {
     @AppStorage("LCWaitForDebugger") var waitForDebugger = false
     
     ///Flekstore user defaults
-    @AppStorage("LCEncryptedUDID", store: LCUtils.appGroupUserDefault)
+    @AppStorage("FSEncryptedUDID")
     private var encryptedUDID: String = ""
 
-    @AppStorage("LCSubscriptionEndDate", store: LCUtils.appGroupUserDefault)
+    @AppStorage("FSSubscriptionEndDate")
     private var subscriptionEndDateStored: String = ""
 
-    @AppStorage("LCSubscriptionStatus", store: LCUtils.appGroupUserDefault)
+    @AppStorage("FSSubscriptionStatus")
     private var subscriptionStatusStored: Bool = false
     
-    @AppStorage("LCSubscriptionInitialized", store: LCUtils.appGroupUserDefault)
+    @AppStorage("FSSubscriptionInitialized")
     private var subscriptionInitialized: Bool = false
     
     @EnvironmentObject private var sharedModel : SharedModel

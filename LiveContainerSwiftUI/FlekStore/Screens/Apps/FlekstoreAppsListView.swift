@@ -128,6 +128,15 @@ struct FlekstoreAppsListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    if viewModel.repository != .flekstore && !viewModel.hasSubscription {
+                        Text("Premium required")
+                            .font(.caption.bold())
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .clipShape(Capsule())
+                    }
                 }
             }
             .sheet(isPresented: $showRepositorySheet) {
@@ -152,6 +161,9 @@ struct FlekstoreAppsListView: View {
                 } else {
                     await viewModel.fetchApps()
                 }
+            }
+            Task {
+                await viewModel.refreshSubscriptionStatus()
             }
         }
         .alert(item: $viewModel.deviceDateErrorMessage) { message in

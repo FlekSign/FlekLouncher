@@ -26,6 +26,21 @@ class FlekstoreAppsListViewModel: ObservableObject {
         static let lastCheckDate = "lastSubscriptionCheckDate"
         static let hasActive = "hasActiveSubscription"
     }
+
+    @AppStorage("FSEncryptedUDID")
+    private var encryptedUDID: String = ""
+
+    @AppStorage("FSSubscriptionEndDate")
+    private var subscriptionEndDateStored: String = ""
+
+    @AppStorage("FSSubscriptionStatus")
+    private var subscriptionStatusStored: Bool = false
+
+    @AppStorage("FSSubscriptionInitialized")
+    private var subscriptionInitialized: Bool = false
+
+    @AppStorage("FSDeviceUDID")
+    private var deviceUDID: String = ""
     
     //for alt store repos
     enum RepositorySource: Equatable {
@@ -196,6 +211,12 @@ class FlekstoreAppsListViewModel: ObservableObject {
 
         isLoading = false
     }
+
+    func refreshSubscriptionStatus() async {
+        loadCachedSubscription()
+        await checkSubscription()
+        subscriptionInitialized = true
+    }
     
     
     //since alt store doesnt provide data if app is adult or not make them all non adult by default
@@ -232,6 +253,33 @@ class FlekstoreAppsListViewModel: ObservableObject {
             }
 
             return nil
+        }
+    }
+
+    private func loadCachedSubscription() {
+        hasSubscription = subscriptionStatusStored
+        subscriptionEndDate = subscriptionEndDateStored.isEmpty ? nil : subscriptionEndDateStored
+    }
+
+    private func checkSubscription() async {
+        guard !encryptedUDID.isEmpty else { return }
+
+        guard let url = URL(
+            string: "https://nestapitest.flekstore.com/device-service/get-status/\(encryptedUDID)"
+        ) else { return }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(DeviceStatusResponse.self, from: data)
+
+            deviceUDID = response.udid
+            subscriptionStatusStored = response.status
+            subscriptionEndDateStored = response.endDate
+
+            hasSubscription = response.status
+            subscriptionEndDate = response.endDate
+        } catch {
+            // Silent fail: keep cached subscription status.
         }
     }
 }
