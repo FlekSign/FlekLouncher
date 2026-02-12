@@ -8,6 +8,7 @@
 import Combine
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 class SearchContext: ObservableObject {
     @Published var query: String = ""
@@ -540,6 +541,8 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     func startInstallApp(_ fileUrl:URL) async {
         do {
             self.installprogressVisible = true
+            UIApplication.shared.isIdleTimerDisabled = true
+            defer { UIApplication.shared.isIdleTimerDisabled = false }
             try await installIpaFile(fileUrl)
             try FileManager.default.removeItem(at: fileUrl)
         } catch {
@@ -761,8 +764,10 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         }
         
         self.installprogressVisible = true
+        UIApplication.shared.isIdleTimerDisabled = true
         defer {
             self.installprogressVisible = false
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         
         if installUrl.isFileURL {
