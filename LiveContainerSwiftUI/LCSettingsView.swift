@@ -102,6 +102,26 @@ struct LCSettingsView: View {
         }
         return "12345"
     }()
+
+    private static let subscriptionDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        return formatter
+    }()
+
+    private func formattedSubscriptionDate(_ dateString: String) -> String {
+        if let date = DateFormatter.deviceServiceFormatter.date(from: dateString) {
+            return Self.subscriptionDateFormatter.string(from: date)
+        }
+
+        if let dateOnly = dateString.split(separator: " ").first {
+            return String(dateOnly)
+        }
+
+        return dateString
+    }
     
     
     var body: some View {
@@ -143,12 +163,12 @@ struct LCSettingsView: View {
                                 .foregroundColor(.secondary)
 
                             if hasSubscription, let endDate = subscriptionEndDate {
-                                Text("Valid till \(endDate)")
+                                Text("Valid till \(formattedSubscriptionDate(endDate))")
                                     .font(.subheadline)
                                     .foregroundColor(.green)
                                     .fontWeight(.semibold)
                             } else if let endDate = subscriptionEndDate {
-                                Text("Ended \(endDate)")
+                                Text("Ended \(formattedSubscriptionDate(endDate))")
                                     .font(.subheadline)
                                     .foregroundColor(.red)
                                     .fontWeight(.semibold)
