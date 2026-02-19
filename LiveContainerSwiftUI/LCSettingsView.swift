@@ -661,9 +661,6 @@ struct LCSettingsView: View {
             if !certificateDataFound {
                 Task { await importEmbeddedCertificate() }
             }
-        }
-        .navigationViewStyle(StackNavigationViewStyle())
-        .onAppear() {
             if !isViewAppeared {
                 guard sharedModel.selectedTab == .settings, let link = sharedModel.deepLink else { return }
                 sharedModel.deepLink = nil
@@ -671,6 +668,7 @@ struct LCSettingsView: View {
                 isViewAppeared = true
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
         .onChange(of: sharedModel.deepLink) { link in
             guard sharedModel.selectedTab == .settings, let link else { return }
             sharedModel.deepLink = nil
