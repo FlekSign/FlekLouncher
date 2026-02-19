@@ -29,57 +29,25 @@ struct LCTabView: View {
     var body: some View {
         Group {
             let appListView = LCAppListView(appDataFolderNames: $appDataFolderNames, tweakFolderNames: $tweakFolderNames)
-            let sourcesView = LCSourcesView()
-            if #available(iOS 19.0, *), SharedModel.isLiquidGlassSearchEnabled {
+            //let sourcesView = LCSourcesView()
                 TabView(selection: $sharedModel.selectedTab) {
-                    if DataManager.shared.model.multiLCStatus != 2 {
-                        Tab("lc.tabView.sources".loc, systemImage: "books.vertical", value: LCTabIdentifier.sources) {
-                            sourcesView
-                        }
-                    }
-                    Tab("lc.tabView.apps".loc, systemImage: "square.stack.3d.up.fill", value: LCTabIdentifier.apps) {
-                        appListView
-                    }
-                    if DataManager.shared.model.multiLCStatus != 2 {
-                        Tab("lc.tabView.tweaks".loc, systemImage: "wrench.and.screwdriver", value: LCTabIdentifier.tweaks) {
-                            LCTweaksView(tweakFolders: $tweakFolderNames)
-                        }
-                    }
-                    Tab("lc.tabView.settings".loc, systemImage: "gearshape.fill", value: LCTabIdentifier.settings) {
-                        LCSettingsView(appDataFolderNames: $appDataFolderNames, tweakFolderNames: $tweakFolderNames)
-                    }
-                    Tab("Search".loc, systemImage: "magnifyingglass", value: LCTabIdentifier.search, role: .search) {
-                        if previousSelectedTab == .sources {
-                            sourcesView
-                                .searchable(text: sourcesView.$searchContext.query)
-                        } else {
-                            appListView
-                                .searchable(text: appListView.$searchContext.query)
-                        }
-                        
-                    }
-                }
-            } else {
-                TabView(selection: $sharedModel.selectedTab) {
-                    if DataManager.shared.model.multiLCStatus != 2 {
-                        sourcesView
-                            .tabItem {
-                                Label("lc.tabView.sources".loc, systemImage: "books.vertical")
-                            }
-                            .tag(LCTabIdentifier.sources)
-                    }
+//                    if DataManager.shared.model.multiLCStatus != 2 {
+//                        sourcesView
+//                            .tabItem {
+//                                Label("lc.tabView.sources".loc, systemImage: "books.vertical")
+//                            }
+//                            .tag(LCTabIdentifier.sources)
+//                    }
                     appListView
                         .tabItem {
                             Label("lc.tabView.apps".loc, systemImage: "square.stack.3d.up.fill")
                         }
                         .tag(LCTabIdentifier.apps)
-                    if DataManager.shared.model.multiLCStatus != 2 {
-                        LCTweaksView(tweakFolders: $tweakFolderNames)
-                            .tabItem{
-                                Label("lc.tabView.tweaks".loc, systemImage: "wrench.and.screwdriver")
-                            }
-                            .tag(LCTabIdentifier.tweaks)
-                    }
+                    FlekstoreAppsListView(selectedTab: $selectedTab)
+                        .tabItem {
+                            Label("Flekstore", systemImage: "globe")
+                        }
+                        .tag(LCTabIdentifier.browse)
                     
                     LCSettingsView(appDataFolderNames: $appDataFolderNames, tweakFolderNames: $tweakFolderNames)
                         .tabItem {
@@ -87,7 +55,6 @@ struct LCTabView: View {
                         }
                         .tag(LCTabIdentifier.settings)
                 }
-            }
         }
         .alert("lc.common.error".loc, isPresented: $errorShow) {
             Button("lc.common.ok".loc) {}
