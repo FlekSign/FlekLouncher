@@ -133,7 +133,7 @@
 		};
 		17DCE9D92C7067ED00731D42 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
@@ -142,7 +142,7 @@
 				E1292AF32DCA3A660065E12D /* LiveProcess.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -1419,7 +1419,7 @@
 			baseConfigurationReferenceRelativePath = LaunchAppExtension.xcconfig;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LaunchAppExtension/LaunchAppExtension.entitlements;
-				CODE_SIGN_IDENTITY = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2V7F92VA47;
@@ -1438,6 +1438,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.fs.livecontainer.LaunchAppExtension;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.fs.livecontainer.LaunchAppExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1686,7 +1687,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = LaunchAppExtensionHelper/LaunchAppExtensionHelper.entitlements;
-				CODE_SIGN_IDENTITY = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2V7F92VA47;
@@ -1705,6 +1706,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.fs.livecontainer.LaunchAppExtensionHelper;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.fs.livecontainer.LaunchAppExtensionHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1724,7 +1726,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = LaunchAppExtensionHelper/LaunchAppExtensionHelper.entitlements;
-				CODE_SIGN_IDENTITY = "$(inherited)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2V7F92VA47;
@@ -1743,6 +1745,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.fs.livecontainer.LaunchAppExtensionHelper;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.fs.livecontainer.LaunchAppExtensionHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
