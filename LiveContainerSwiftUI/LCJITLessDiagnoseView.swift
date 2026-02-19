@@ -172,51 +172,51 @@ struct LCJITLessDiagnoseView : View {
     var body: some View {
         if loaded {
             Form {
-                Section {
-                    HStack {
-                        Text("lc.jitlessDiag.bundleId".loc)
-                        Spacer()
-                        Text(Bundle.main.bundleIdentifier ?? "lc.common.unknown".loc)
-                            .foregroundStyle(.gray)
-                            .textSelection(.enabled)
-                    }
-
-                    HStack {
-                        Text("lc.jitlessDiag.appGroupId".loc)
-                        Spacer()
-                        Text(appGroupId)
-                            .foregroundStyle(appGroupId == "Unknown" ? .red : .green)
-                    }
-                    HStack {
-                        Text("lc.jitlessDiag.appGroupAccessible".loc)
-                        Spacer()
-                        Text(appGroupAccessible ? "lc.common.yes".loc : "lc.common.no".loc)
-                            .foregroundStyle(appGroupAccessible ? .green : .red)
-                    }
-                    HStack {
-                        Text("lc.jitlessDiag.store".loc)
-                        Spacer()
-                        if store == .AltStore {
-                            Text("AltStore")
-                                .foregroundStyle(.gray)
-                        } else if store == .SideStore {
-                            Text("SideStore")
-                                .foregroundStyle(.gray)
-                        } else if store == .ADP {
-                            Text("lc.common.ADP".loc)
-                                .foregroundStyle(.gray)
-                        } else {
-                            Text("lc.common.unknown".loc)
-                                .foregroundStyle(.gray)
-                        }
-                        
-                    }
-                    NavigationLink {
-                        LCEntitlementView()
-                    } label: {
-                        Text("lc.jielessDiag.entitlement".loc)
-                    }
-                }
+//                Section {
+//                    HStack {
+//                        Text("lc.jitlessDiag.bundleId".loc)
+//                        Spacer()
+//                        Text(Bundle.main.bundleIdentifier ?? "lc.common.unknown".loc)
+//                            .foregroundStyle(.gray)
+//                            .textSelection(.enabled)
+//                    }
+//
+//                    HStack {
+//                        Text("lc.jitlessDiag.appGroupId".loc)
+//                        Spacer()
+//                        Text(appGroupId)
+//                            .foregroundStyle(appGroupId == "Unknown" ? .red : .green)
+//                    }
+//                    HStack {
+//                        Text("lc.jitlessDiag.appGroupAccessible".loc)
+//                        Spacer()
+//                        Text(appGroupAccessible ? "lc.common.yes".loc : "lc.common.no".loc)
+//                            .foregroundStyle(appGroupAccessible ? .green : .red)
+//                    }
+//                    HStack {
+//                        Text("lc.jitlessDiag.store".loc)
+//                        Spacer()
+//                        if store == .AltStore {
+//                            Text("AltStore")
+//                                .foregroundStyle(.gray)
+//                        } else if store == .SideStore {
+//                            Text("SideStore")
+//                                .foregroundStyle(.gray)
+//                        } else if store == .ADP {
+//                            Text("lc.common.ADP".loc)
+//                                .foregroundStyle(.gray)
+//                        } else {
+//                            Text("lc.common.unknown".loc)
+//                                .foregroundStyle(.gray)
+//                        }
+//                        
+//                    }
+//                    NavigationLink {
+//                        LCEntitlementView()
+//                    } label: {
+//                        Text("lc.jielessDiag.entitlement".loc)
+//                    }
+//                }
                     
                 Section() {
                     HStack {
@@ -284,14 +284,14 @@ struct LCJITLessDiagnoseView : View {
                     }
                     .disabled(isJITLessTestInProgress)
                     
-                    Button {
-                        getHelp()
-                    } label: {
-                        // we apply a super cool rainbow effect so people will never miss this button
-                        Text("lc.jitlessDiag.getHelp".loc)
-                            .bold()
-                            .rainbow()
-                    }
+//                    Button {
+//                        getHelp()
+//                    } label: {
+//                        // we apply a super cool rainbow effect so people will never miss this button
+//                        Text("lc.jitlessDiag.getHelp".loc)
+//                            .bold()
+//                            .rainbow()
+//                    }
                 }
 
             }
