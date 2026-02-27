@@ -50,6 +50,7 @@ struct LCSettingsView: View {
     
     @AppStorage("LCSideJITServerAddress", store: LCUtils.appGroupUserDefault) var sideJITServerAddress : String = ""
     @AppStorage("LCDeviceUDID", store: LCUtils.appGroupUserDefault) var deviceUDID: String = ""
+    @AppStorage("FSDeviceUDID") private var fsDeviceUDID: String = ""
     @AppStorage("LCJITEnablerType", store: LCUtils.appGroupUserDefault) var JITEnabler: JITEnablerType = .SideJITServer
     
     @AppStorage("LCMultitaskMode", store: LCUtils.appGroupUserDefault) var multitaskMode: MultitaskMode = .virtualWindow
@@ -148,16 +149,37 @@ struct LCSettingsView: View {
                         }
                         Spacer()
                         
-                        Button(action: {
-                            UIPasteboard.general.string = udid
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }) {
-                            Text("Copy UDID")
+                        if udid.isEmpty {
+                            Button {
+                                Task {
+                                    await checkSubscription()
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Refresh")
+                                }
                                 .font(.subheadline)
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(30)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.gray.opacity(0.15))
+                                )
+                            }
+                            .disabled(isSubscriptionLoading)
+                        } else {
+                            Button(action: {
+                                UIPasteboard.general.string = udid
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }) {
+                                Text("Copy UDID")
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 6)
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(30)
+                            }
                         }
                     }
                     .padding(.vertical, 4)
@@ -578,19 +600,24 @@ struct LCSettingsView: View {
             .navigationBarTitle("lc.tabView.settings".loc)
             .onAppear {
                 loadEncryptedUDIDFromPlist()
-                
-                // Load cached values
-                udid = deviceUDID
-                hasSubscription = subscriptionStatusStored
-                subscriptionEndDate = subscriptionEndDateStored.isEmpty ? nil : subscriptionEndDateStored
-                
-                // Only call API once on initial start
+                hydrateSubscriptionStateFromStorage()
+
+                // Fetch once for initial subscription bootstrap only.
                 if !subscriptionInitialized {
                     Task {
                         await checkSubscription()
                         subscriptionInitialized = true
                     }
                 }
+            }
+            .onChange(of: deviceUDID) { newValue in
+                udid = newValue
+            }
+            .onChange(of: subscriptionStatusStored) { newValue in
+                hasSubscription = newValue
+            }
+            .onChange(of: subscriptionEndDateStored) { newValue in
+                subscriptionEndDate = newValue.isEmpty ? nil : newValue
             }
             .alert("lc.common.error".loc, isPresented: $errorShow){
             } message: {
@@ -943,9 +970,14 @@ struct LCSettingsView: View {
         if let dict = Bundle.main.infoDictionary,
            let value = dict["encryptedUdid"] as? String,
            !value.isEmpty {
-            
             encryptedUDID = value
         }
+    }
+
+    private func hydrateSubscriptionStateFromStorage() {
+        udid = deviceUDID.isEmpty ? fsDeviceUDID : deviceUDID
+        hasSubscription = subscriptionStatusStored
+        subscriptionEndDate = subscriptionEndDateStored.isEmpty ? nil : subscriptionEndDateStored
     }
     
     private func checkSubscription() async {
