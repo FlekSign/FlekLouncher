@@ -64,7 +64,7 @@ struct LCTabView: View {
                         .tag(LCTabIdentifier.apps)
                     FlekstoreAppsListView(selectedTab: $sharedModel.selectedTab)
                         .tabItem {
-                            Label("Browse", systemImage: "globe")
+                            Label("lc.tabView.browse".loc, systemImage: "globe")
                         }
                         .tag(LCTabIdentifier.browse)
                     
