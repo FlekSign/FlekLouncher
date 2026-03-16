@@ -19,6 +19,7 @@ struct LCTabView: View {
     @State private var isBlocked = false
     @State private var hasCheckedBlockedStatus = false
     @State private var didFailBlockedStatusCheck = false
+    @State private var pendingURL: URL?
     @State private var accessVerificationFailureMessage = "Please check your internet connection and try again."
     @State private var blockedReason = "Unavailable"
     @State private var blockedMessage = "Your access has been limited by the service."
@@ -102,6 +103,7 @@ struct LCTabView: View {
             checkBundleId()
             checkGetTaskAllow()
             checkPrivateContainerBookmark()
+            processPendingURLIfNeeded()
         }
         .onReceive(pub) { out in
             if let scene1 = sceneDelegate.window?.windowScene, let scene2 = out.object as? UIWindowScene, scene1 == scene2 {
@@ -122,6 +124,7 @@ struct LCTabView: View {
     
     func dispatchURL(url: URL) {
         if isBlocked || didFailBlockedStatusCheck || !hasCheckedBlockedStatus {
+            pendingURL = url
             return
         }
         repeat {
@@ -152,6 +155,14 @@ struct LCTabView: View {
         } while(false)
         
         sharedModel.deepLink = url
+    }
+
+    func processPendingURLIfNeeded() {
+        guard let url = pendingURL else {
+            return
+        }
+        pendingURL = nil
+        dispatchURL(url: url)
     }
     
     // MARK: - Existing helper functions
