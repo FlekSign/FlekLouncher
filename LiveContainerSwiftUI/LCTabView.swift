@@ -275,30 +275,6 @@ struct LCTabView: View {
         }
         
         let defaultApps: [AppRepository] = [
-            AppRepository(
-                name: "FlekSt0re Lib",
-                iconUrl: "https://flekstore.com/pro_app/icons/apple-touch-icon.png",
-                sourceURL: "Default app catalog",
-                isSelected: true
-            ),
-            AppRepository(
-                name: "Nabzclan - App Store",
-                iconUrl: "https://cdn.nabzclan.vip/popupv3/imgs/logo-tras.png",
-                sourceURL: "https://appstore.nabzclan.vip/repos/altstore.php",
-                isSelected: false
-            ),
-            AppRepository(
-                name: "AppTesters IPA Repo",
-                iconUrl: "https://apptesters.org/apptesters-512x512.png",
-                sourceURL: "https://repository.apptesters.org/",
-                isSelected: false
-            ),
-            AppRepository(
-                name: "Quantum Source",
-                iconUrl: "https://quarksources.github.io/assets/ElementQ-Circled.png",
-                sourceURL: "https://quarksources.github.io/dist/quantumsource.min.json",
-                isSelected: false
-            )
         ]
         
         if let data = try? JSONEncoder().encode(defaultApps) {
