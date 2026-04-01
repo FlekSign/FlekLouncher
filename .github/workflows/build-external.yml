@@ -79,13 +79,14 @@ jobs:
           open(p,'w').write(t)
           "
 
-      - name: Convert app icon JPEGs to PNGs
+      - name: Convert and resize app icons to 1024x1024 PNGs
         run: |
           for iconset in Resources/Assets.xcassets/*.appiconset; do
             for jpg in "$iconset"/*.jpg; do
               [ -f "$jpg" ] || continue
               png="${jpg%.jpg}.png"
               sips -s format png "$jpg" --out "$png"
+              sips -z 1024 1024 "$png"
               rm "$jpg"
             done
             sed -i '' 's/\.jpg"/.png"/g' "$iconset/Contents.json"
