@@ -58,15 +58,22 @@ jobs:
         with:
           xcode-version: "26.3"
 
-      - name: Add litehook to LiveContainerShared target
+      - name: Compile litehook and link into LiveContainerShared
         run: |
+          xcrun -sdk iphoneos clang -c \
+            -target arm64-apple-ios15.0 \
+            -fcommon \
+            litehook/src/litehook.c \
+            -o litehook.o
+
           python3 -c "
           p = 'LiveContainer.xcodeproj/project.pbxproj'
           t = open(p).read()
+          import os
+          obj = os.path.abspath('litehook.o')
           t = t.replace(
-            'E1292C1A2DCA48F00065E12D /* Tweaks */,',
-            '17780D3B2E1C02420077E636 /* litehook */,\n\t\t\t\tE1292C1A2DCA48F00065E12D /* Tweaks */,',
-            1)
+            'OTHER_LDFLAGS = \"\";\n\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.fs.livecontainer.LiveContainerShared;',
+            'OTHER_LDFLAGS = \"' + obj + '\";\n\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.fs.livecontainer.LiveContainerShared;')
           open(p,'w').write(t)
           "
 
