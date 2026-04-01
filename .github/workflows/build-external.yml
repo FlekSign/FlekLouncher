@@ -131,7 +131,20 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-          | xcpretty
+          | xcpretty || {
+            echo "=== Build failed, re-running without xcpretty for full error log ==="
+            xcodebuild archive \
+              -project "LiveContainer.xcodeproj" \
+              -scheme "LiveContainer" \
+              -configuration Release \
+              -archivePath $PWD/build/LiveContainer.xcarchive \
+              -destination "generic/platform=iOS" \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tail -100
+            exit 1
+          }
 
       - name: Create IPA
         run: |
