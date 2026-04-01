@@ -60,8 +60,7 @@ jobs:
 
       - name: Add litehook to LiveContainerShared target
         run: |
-          sed -i '' 's|E1292C1A2DCA48F00065E12D /\* Tweaks \*/,|17780D3B2E1C02420077E636 /* litehook */,\
-\t\t\t\tE1292C1A2DCA48F00065E12D /* Tweaks */,|' LiveContainer.xcodeproj/project.pbxproj
+          sed -i '' '/E1292C1A2DCA48F00065E12D \/\* Tweaks \*\//i\'$'\n''\t\t\t\t17780D3B2E1C02420077E636 /* litehook */,' LiveContainer.xcodeproj/project.pbxproj
 
       - name: Update current build
         run: |
