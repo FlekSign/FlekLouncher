@@ -58,6 +58,11 @@ jobs:
         with:
           xcode-version: "26.3"
 
+      - name: Add litehook to LiveContainerShared target
+        run: |
+          sed -i '' 's|E1292C1A2DCA48F00065E12D /\* Tweaks \*/,|17780D3B2E1C02420077E636 /* litehook */,\
+\t\t\t\tE1292C1A2DCA48F00065E12D /* Tweaks */,|' LiveContainer.xcodeproj/project.pbxproj
+
       - name: Update current build
         run: |
           FILE1=$(openssl rand -hex 8).txt
