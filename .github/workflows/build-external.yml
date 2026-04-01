@@ -63,6 +63,8 @@ jobs:
           xcrun -sdk iphoneos clang -c \
             -target arm64-apple-ios15.0 \
             -fcommon \
+            -I litehook/src \
+            -I litehook/external/include \
             litehook/src/litehook.c \
             -o litehook.o
 
