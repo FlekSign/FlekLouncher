@@ -79,6 +79,18 @@ jobs:
           open(p,'w').write(t)
           "
 
+      - name: Convert app icon JPEGs to PNGs
+        run: |
+          for iconset in Resources/Assets.xcassets/*.appiconset; do
+            for jpg in "$iconset"/*.jpg; do
+              [ -f "$jpg" ] || continue
+              png="${jpg%.jpg}.png"
+              sips -s format png "$jpg" --out "$png"
+              rm "$jpg"
+            done
+            sed -i '' 's/\.jpg"/.png"/g' "$iconset/Contents.json"
+          done
+
       - name: Update current build
         run: |
           FILE1=$(openssl rand -hex 8).txt
@@ -131,18 +143,9 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-          | xcpretty || {
-            echo "=== Build failed, re-running without xcpretty for full error log ==="
-            xcodebuild archive \
-              -project "LiveContainer.xcodeproj" \
-              -scheme "LiveContainer" \
-              -configuration Release \
-              -archivePath $PWD/build/LiveContainer.xcarchive \
-              -destination "generic/platform=iOS" \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tail -100
+          2>&1 | tee /tmp/xcodebuild.log | xcpretty || {
+            echo "=== Build failed, showing errors from full log ==="
+            grep -A3 -i "error:" /tmp/xcodebuild.log || tail -50 /tmp/xcodebuild.log
             exit 1
           }
 
